@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>测试页面 — 第三方 AI 对话</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; color: #e0e0e0; font-family: sans-serif; }
+  .chat-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+  .msg { padding: 16px 20px; margin: 12px 0; border-radius: 12px; max-width: 85%; }
+  .msg-user { background: #2d5a27; margin-left: auto; text-align: right; }
+  .msg-ai { background: #1e3a5f; }
+  .msg .role { font-size: 12px; opacity: 0.6; margin-bottom: 4px; }
+  .msg p { font-size: 14px; line-height: 1.6; }
+  .msg h2 { font-size: 16px; font-weight: 700; margin: 12px 0 6px; color: #8ecae6; }
+  .msg h3 { font-size: 14px; font-weight: 600; margin: 8px 0 4px; color: #a8dadc; }
+</style>
+</head>
+<body>
+<div class="chat-container">
+  <h1 style="text-align:center;padding:20px;color:#fff">🤖 AI 助手 — 第三方对话平台</h1>
+
+  <div class="msg msg-user" data-sender="user">
+    <div class="role">You</div>
+    <p>帮我解释一下什么是量子计算？</p>
+  </div>
+
+  <div class="msg msg-ai" data-sender="assistant">
+    <div class="role">AI Assistant</div>
+    <h2>什么是量子计算</h2>
+    <p>量子计算是一种利用量子力学原理进行信息处理的计算方式。与经典计算机使用比特(0或1)不同，量子计算机使用量子比特(qubit)。</p>
+    <h3>核心概念</h3>
+    <p>量子叠加：一个量子比特可以同时处于0和1的状态。</p>
+    <h3>量子纠缠</h3>
+    <p>两个量子比特可以建立关联，改变一个会瞬间影响另一个。</p>
+    <h3>实际应用</h3>
+    <p>药物研发、密码学、优化问题等领域有巨大潜力。</p>
+  </div>
+
+  <div class="msg msg-user" data-sender="user">
+    <div class="role">You</div>
+    <p>那它和传统计算有什么区别？</p>
+  </div>
+
+  <div class="msg msg-ai" data-sender="assistant">
+    <div class="role">AI Assistant</div>
+    <h2>量子计算 vs 传统计算</h2>
+    <p>两者在底层原理上有根本差异。</p>
+    <h3>计算单元</h3>
+    <p>传统：比特(0或1) vs 量子：量子比特(叠加态)</p>
+    <h3>处理方式</h3>
+    <p>传统：串行/有限并行 vs 量子：大规模量子并行</p>
+  </div>
+
+  <div class="msg msg-user" data-sender="user">
+    <div class="role">You</div>
+    <p>推荐一些学习资源吧</p>
+  </div>
+
+  <div class="msg msg-ai" data-sender="assistant">
+    <div class="role">AI Assistant</div>
+    <h2>学习资源推荐</h2>
+    <p>以下是一些入门级学习资源：</p>
+    <h3>书籍</h3>
+    <p>《量子计算导论》— 经典教材</p>
+    <h3>在线课程</h3>
+    <p>IBM Quantum Learning — 免费实操平台</p>
+  </div>
+</div>
+</body>
+</html>

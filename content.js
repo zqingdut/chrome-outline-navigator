@@ -80,8 +80,8 @@
   // ══════════════════════════════════════════════════
 
   // 问答角色关键词（用于 class/id/data 属性匹配）
-  const Q_PATTERNS = /user|human|question|提问|问题|q-msg|msg-user|chat-user|from-user|is-user|role-user|sender-user|author-user|human-turn|user-turn|user-message/i;
-  const A_PATTERNS = /assistant|ai|bot|answer|回答|回复|a-msg|msg-ai|msg-bot|chat-bot|chat-ai|from-ai|from-bot|is-ai|is-bot|role-assistant|role-ai|sender-ai|author-ai|ai-turn|bot-turn|assistant-message|ai-message|bot-message/i;
+  const Q_PATTERNS = /user|human|question|提问|问题|q-msg|msg-user|chat-user|from-user|is-user|role-user|sender-user|author-user|human-turn|user-turn|user-message|right/i;
+  const A_PATTERNS = /assistant|ai|bot|answer|回答|回复|a-msg|msg-ai|msg-bot|chat-bot|chat-ai|from-ai|from-bot|is-ai|is-bot|role-assistant|role-ai|sender-ai|author-ai|ai-turn|bot-turn|assistant-message|ai-message|bot-message|left/i;
 
   function detectChatDialog() {
     // Step 1: 找到页面中重复出现的对话容器
@@ -90,7 +90,7 @@
 
     // 取最可能的容器（子元素最多的）
     const best = chatContainers.sort((a, b) => b.children.length - a.children.length)[0];
-    const messages = extractMessages(best.container, best.childSelector);
+    const messages = extractMessages(best.container, best.children);
     return messages;
   }
 
@@ -98,68 +98,31 @@
   function findChatContainers() {
     const candidates = [];
 
-    // 策略 A：找包含 "chat"/"conversation"/"message"/"dialog"/"对话"/"消息" 的容器
-    const chatKeywords = /chat|conversation|messages?|dialog|对话|消息|qa|问答|thread|talks?/i;
-    document.querySelectorAll('div, section, main, article').forEach(el => {
-      const id = (el.id || '').toLowerCase();
-      const cls = (el.className || '').toString().toLowerCase();
-      const role = (el.getAttribute('role') || '').toLowerCase();
-      if (chatKeywords.test(id) || chatKeywords.test(cls) || chatKeywords.test(role)) {
-        const kids = getDirectMessageChildren(el);
-        if (kids.length >= 2) {
-          candidates.push({ container: el, childSelector: kids[0].tagName + '.' + kids[0].className.split(' ')[0], children: kids });
-        }
+    // 通用策略：找所有 div，其中子元素 ≥ 4 且包含两种角色
+    document.querySelectorAll('div, section, main').forEach(el => {
+      const kids = Array.from(el.children).filter(k => {
+        const r = k.getBoundingClientRect();
+        if (r.height < 20) return false;
+        if (['SCRIPT', 'STYLE', 'SVG', 'CANVAS', 'BR', 'HR'].includes(k.tagName)) return false;
+        // 排除标题、段落等非消息元素
+        if (['H1', 'H2', 'H3', 'P'].includes(k.tagName) && !k.className) return false;
+        return true;
+      });
+
+      if (kids.length < 3 || kids.length > 200) return;
+
+      // 检查子元素是否包含两种角色
+      const roles = kids.map(k => guessRole(k));
+      const hasBoth = roles.includes('user') && roles.includes('assistant');
+      if (hasBoth) {
+        candidates.push({ container: el, children: kids });
       }
     });
-
-    // 策略 B：找有大量相似子元素的容器（通用启发式）
-    if (candidates.length === 0) {
-      document.querySelectorAll('div, section, main').forEach(el => {
-        const kids = getDirectMessageChildren(el);
-        if (kids.length >= 3 && kids.length <= 200) {
-          // 检查子元素是否有交替的角色标记
-          const roles = kids.map(k => guessRole(k));
-          const hasBothRoles = roles.includes('user') && roles.includes('assistant');
-          if (hasBothRoles) {
-            candidates.push({ container: el, childSelector: 'auto', children: kids });
-          }
-        }
-      });
-    }
 
     return candidates;
   }
 
-  // 获取容器中可能是消息的直接子元素
-  function getDirectMessageChildren(container) {
-    const kids = Array.from(container.children).filter(el => {
-      if (!isVisible(el)) return false;
-      const tag = el.tagName;
-      // 排除纯装饰元素
-      if (['SCRIPT', 'STYLE', 'SVG', 'CANVAS', 'BR', 'HR'].includes(tag)) return false;
-      const r = el.getBoundingClientRect();
-      // 消息块通常有一定高度
-      if (r.height < 20) return false;
-      return true;
-    });
-
-    // 按类名分组，找最大的同构组
-    const groups = {};
-    kids.forEach(k => {
-      const key = k.className || k.tagName;
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(k);
-    });
-
-    // 返回最大的同构组（至少 2 个）
-    let best = [];
-    for (const g of Object.values(groups)) {
-      if (g.length > best.length) best = g;
-    }
-    return best.length >= 2 ? best : [];
-  }
-
-  // 猜测消息角色
+  // 从容器中提取消息
   function guessRole(el) {
     // 检查 data 属性
     for (const attr of el.attributes) {
@@ -192,9 +155,8 @@
   }
 
   // 从容器中提取消息
-  function extractMessages(container, childSelector) {
+  function extractMessages(container, children) {
     const items = [];
-    const children = getDirectMessageChildren(container);
 
     children.forEach((el, i) => {
       if (!isVisible(el)) return;
@@ -268,15 +230,17 @@
   // ══════════════════════════════════════════════════
   function detectQAPatterns() {
     const items = [];
-    // 找所有包含 Q:/A:/问:/答: 前缀的元素
-    const all = document.querySelectorAll('p, div, li, dt, dd, section, article, h1, h2, h3, h4, h5, h6');
     const qaRegex = /^(Q[:：]\s*|A[:：]\s*|问[:：]\s*|答[:：]\s*|Question[:：]?\s*|Answer[:：]?\s*)/i;
 
-    all.forEach((el, i) => {
+    // 只查叶子节点或接近叶子的元素，避免父子重复匹配
+    document.querySelectorAll('div, p, li, dt, dd, section, article, h1, h2, h3, h4, h5, h6').forEach(el => {
       const text = el.textContent.trim();
       if (!qaRegex.test(text)) return;
       if (!isVisible(el)) return;
       if (isInChrome(el)) return;
+      // 跳过包含子 div 也匹配的父元素（避免重复）
+      const childMatch = el.querySelector('div, p');
+      if (childMatch && qaRegex.test(childMatch.textContent.trim())) return;
       if (!el.id) el.id = uid();
 
       const isQ = /^(Q[:：]|问[:：]|Question)/i.test(text);
@@ -317,9 +281,9 @@
       const weight = parseInt(style.fontWeight) || 400;
 
       // 判定条件：字号明显大于正文 且 加粗
-      const isBigBold = size > bodySize * 1.3 && weight >= 600;
+      const isBigBold = size > bodySize * 1.1 && weight >= 600;
       // 或者字号非常大
-      const isVeryBig = size > bodySize * 1.8;
+      const isVeryBig = size > bodySize * 1.4;
 
       if (isBigBold || isVeryBig) {
         if (!el.id) el.id = uid();

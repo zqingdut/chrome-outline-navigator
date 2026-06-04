@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>测试页面 — 非标准 AI 站</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #c9d1d9; font-family: sans-serif; }
+  .talk-area { max-width: 750px; margin: 0 auto; padding: 24px; }
+  .bubble { padding: 14px 18px; margin: 10px 0; border-radius: 8px; }
+  .bubble.left { background: #161b22; border-left: 3px solid #58a6ff; }
+  .bubble.right { background: #1a2332; border-right: 3px solid #3fb950; text-align: right; }
+  .bubble .name { font-size: 11px; color: #8b949e; margin-bottom: 4px; }
+  .bubble .txt { font-size: 14px; line-height: 1.6; }
+  .bubble .txt b { color: #58a6ff; display: block; margin: 8px 0 4px; font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="talk-area">
+  <div style="text-align:center;padding:20px">
+    <h1 style="color:#58a6ff">💬 智能问答助手</h1>
+    <p style="color:#8b949e;font-size:13px">第三方 AI 对话平台</p>
+  </div>
+
+  <div class="bubble right">
+    <div class="name">用户</div>
+    <div class="txt">Python 和 JavaScript 哪个更适合初学者？</div>
+  </div>
+
+  <div class="bubble left">
+    <div class="name">AI 助手</div>
+    <div class="txt">
+      <b>编程语言选择指南</b>
+      两种语言各有优势，取决于你的目标。
+      <b>Python 的优势</b>
+      语法简洁，接近自然语言，非常适合零基础入门。在数据科学、AI、自动化领域应用广泛。
+      <b>JavaScript 的优势</b>
+      前后端通吃，学一门语言可以做全栈。Web 开发必备，即时反馈强。
+      <b>我的建议</b>
+      如果你想做 AI/数据 → Python；想做 Web/应用 → JavaScript。
+    </div>
+  </div>
+
+  <div class="bubble right">
+    <div class="name">用户</div>
+    <div class="txt">那学 Python 需要多久能入门？</div>
+  </div>
+
+  <div class="bubble left">
+    <div class="name">AI 助手</div>
+    <div class="txt">
+      <b>Python 入门时间线</b>
+      这取决于你的投入时间和学习方式。
+      <b>第 1-2 周</b>
+      掌握基础语法：变量、条件、循环、函数。
+      <b>第 3-4 周</b>
+      学习数据结构：列表、字典、集合、文件操作。
+      <b>第 2-3 个月</b>
+      完成一个小项目，比如爬虫或数据分析脚本。
+    </div>
+  </div>
+
+  <div class="bubble right">
+    <div class="name">用户</div>
+    <div class="txt">有没有推荐的练习平台？</div>
+  </div>
+
+  <div class="bubble left">
+    <div class="name">AI 助手</div>
+    <div class="txt">
+      <b>推荐练习平台</b>
+      LeetCode — 算法练习首选，有中文版。Codewars — 趣味编程挑战。菜鸟教程 — 中文文档+在线编辑器。
+    </div>
+  </div>
+</div>
+</body>
+</html>
