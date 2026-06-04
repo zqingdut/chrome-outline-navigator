@@ -1,0 +1,356 @@
+/* ===================================================
+   Page Outline Navigator — Styles
+   参考 aihot.virxact.com 深色主题风格
+   =================================================== */
+
+/* ── 侧边栏容器 ────────────────────────────────── */
+#__outline_sidebar {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 260px;
+  max-height: 70vh;
+  background: linear-gradient(135deg, #0f1923 0%, #1a1f2e 100%);
+  border-left: 1px solid rgba(100, 140, 255, 0.12);
+  border-radius: 12px 0 0 12px;
+  box-shadow:
+    -4px 0 24px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+/* ── 收起状态 ────────────────────────────────── */
+#__outline_sidebar.__outline_collapsed {
+  width: 40px;
+  max-height: 200px;
+  border-radius: 12px 0 0 12px;
+}
+
+#__outline_sidebar.__outline_collapsed .__outline_header,
+#__outline_sidebar.__outline_collapsed .__outline_search,
+#__outline_sidebar.__outline_collapsed .__outline_list,
+#__outline_sidebar.__outline_collapsed .__outline_empty {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#__outline_sidebar.__outline_collapsed .__outline_handle {
+  opacity: 1;
+}
+
+/* ── 拖拽手柄（收起时显示） ──────────────────── */
+.__outline_handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-height: 40px;
+  opacity: 0;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.__outline_handle:hover {
+  color: rgba(120, 160, 255, 0.9);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ── 标题区 ────────────────────────────────── */
+.__outline_header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+
+.__outline_title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.__outline_title svg {
+  color: rgba(100, 160, 255, 0.8);
+}
+
+.__outline_count {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.__outline_toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.__outline_toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.__outline_toggle svg {
+  transition: transform 0.3s;
+}
+
+/* ── 搜索框 ────────────────────────────────── */
+.__outline_search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 12px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  transition: all 0.2s, opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.__outline_search:focus-within {
+  border-color: rgba(100, 160, 255, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.__outline_search svg {
+  color: rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.__outline_search_input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: inherit;
+}
+
+.__outline_search_input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── 列表 ────────────────────────────────── */
+.__outline_list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0;
+  transition: opacity 0.2s;
+}
+
+.__outline_list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.__outline_list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.__outline_list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.__outline_list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── 列表项 ────────────────────────────────── */
+.__outline_item {
+  display: flex;
+  align-items: center;
+  padding: 7px 12px 7px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-right: 2px solid transparent;
+  position: relative;
+}
+
+.__outline_item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.__outline_item.__outline_active {
+  background: rgba(100, 160, 255, 0.08);
+  border-right-color: rgba(100, 160, 255, 0.6);
+}
+
+.__outline_item.__outline_active .__outline_item_text {
+  color: rgba(140, 180, 255, 0.95);
+}
+
+.__outline_item_indent {
+  flex-shrink: 0;
+}
+
+/* ── 级别标记点 ────────────────────────────── */
+.__outline_item_marker {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 8px;
+  transition: all 0.2s;
+}
+
+.__outline_marker_level_1 {
+  background: rgba(100, 160, 255, 0.8);
+  width: 7px;
+  height: 7px;
+}
+
+.__outline_marker_level_2 {
+  background: rgba(120, 200, 160, 0.7);
+}
+
+.__outline_marker_level_3 {
+  background: rgba(255, 180, 100, 0.6);
+}
+
+.__outline_marker_level_4 {
+  background: rgba(200, 140, 255, 0.5);
+}
+
+.__outline_marker_level_5 {
+  background: rgba(255, 255, 255, 0.25);
+  width: 4px;
+  height: 4px;
+}
+
+.__outline_marker_level_6 {
+  background: rgba(255, 255, 255, 0.15);
+  width: 3px;
+  height: 3px;
+}
+
+/* ── 列表项文字 ────────────────────────────── */
+.__outline_item_text {
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s;
+  user-select: none;
+}
+
+.__outline_level_1 .__outline_item_text {
+  font-weight: 600;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.__outline_level_2 .__outline_item_text {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── 空状态 ────────────────────────────────── */
+.__outline_empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 16px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+  transition: opacity 0.2s;
+}
+
+/* ── 标题闪烁高亮效果 ──────────────────────── */
+@keyframes __outline_flash {
+  0% { 
+    background-color: rgba(100, 160, 255, 0.15);
+    box-shadow: 0 0 0 2px rgba(100, 160, 255, 0.2);
+  }
+  100% { 
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.__outline_flash {
+  animation: __outline_flash 1.2s ease-out;
+  border-radius: 4px;
+}
+
+/* ── 入场动画 ──────────────────────────────── */
+@keyframes __outline_slide_in {
+  from {
+    transform: translateY(-50%) translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(-50%) translateX(0);
+    opacity: 1;
+  }
+}
+
+#__outline_sidebar:not(.__outline_collapsed) {
+  animation: __outline_slide_in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── AI 聊天模式样式 ──────────────────────── */
+.__outline_question .__outline_item_text {
+  color: rgba(120, 200, 160, 0.85);
+}
+
+.__outline_question .__outline_item_marker {
+  background: rgba(120, 200, 160, 0.7) !important;
+}
+
+.__outline_answer .__outline_item_text {
+  color: rgba(180, 140, 255, 0.75);
+}
+
+.__outline_answer .__outline_item_marker {
+  background: rgba(180, 140, 255, 0.6) !important;
+}
+
+/* ── 移动端适配 ──────────────────────────────── */
+@media (max-width: 768px) {
+  #__outline_sidebar {
+    width: 220px;
+    max-height: 60vh;
+  }
+  
+  #__outline_sidebar.__outline_collapsed {
+    width: 32px;
+  }
+}

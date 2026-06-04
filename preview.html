@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Outline Navigator — 效果预览</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+      background: #0a0e14;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.7;
+    }
+
+    /* ── 顶部导航 ── */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: rgba(15,25,35,0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      z-index: 100;
+    }
+    .topbar-brand {
+      font-size: 16px;
+      font-weight: 700;
+      color: rgba(100,160,255,0.9);
+      letter-spacing: 0.5px;
+    }
+    .topbar-brand span { color: rgba(255,255,255,0.4); font-weight: 400; margin-left: 8px; font-size: 13px; }
+
+    /* ── 主内容 ── */
+    .main {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 80px 24px 120px;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 10px;
+      background: rgba(100,160,255,0.12);
+      color: rgba(100,160,255,0.8);
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+
+    h1 { font-size: 28px; font-weight: 700; color: rgba(255,255,255,0.95); margin-bottom: 12px; line-height: 1.3; }
+    h2 { font-size: 20px; font-weight: 600; color: rgba(255,255,255,0.85); margin-top: 48px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    h3 { font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.75); margin-top: 32px; margin-bottom: 12px; }
+    h4 { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.65); margin-top: 24px; margin-bottom: 8px; }
+
+    p { font-size: 14px; color: rgba(255,255,255,0.55); margin-bottom: 16px; }
+
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .card-title { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); margin-bottom: 8px; }
+    .card p { margin-bottom: 0; }
+
+    code {
+      background: rgba(100,160,255,0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: rgba(140,180,255,0.8);
+    }
+
+    /* ── 右侧大纲导航（演示） ── */
+    .outline-sidebar {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      width: 260px;
+      max-height: 70vh;
+      background: linear-gradient(135deg, #0f1923 0%, #1a1f2e 100%);
+      border-left: 1px solid rgba(100,140,255,0.12);
+      border-radius: 12px 0 0 12px;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+      z-index: 2147483647;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+    }
+    .outline-sidebar.collapsed { width: 40px; max-height: 200px; }
+    .outline-sidebar.collapsed .outline-header,
+    .outline-sidebar.collapsed .outline-search,
+    .outline-sidebar.collapsed .outline-list { opacity: 0; pointer-events: none; }
+    .outline-sidebar.collapsed .outline-handle { opacity: 1; }
+
+    .outline-handle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      min-height: 40px;
+      opacity: 0;
+      color: rgba(255,255,255,0.5);
+      cursor: pointer;
+      transition: opacity 0.2s;
+      flex-shrink: 0;
+    }
+    .outline-handle:hover { color: rgba(120,160,255,0.9); background: rgba(255,255,255,0.04); }
+
+    .outline-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+      transition: opacity 0.2s;
+    }
+    .outline-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.85);
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+    .outline-title svg { color: rgba(100,160,255,0.8); }
+    .outline-count {
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.06);
+      padding: 2px 8px;
+      border-radius: 10px;
+      white-space: nowrap;
+      margin-left: auto;
+    }
+    .outline-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: rgba(255,255,255,0.04);
+      border-radius: 6px;
+      color: rgba(255,255,255,0.45);
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      padding: 0;
+    }
+    .outline-toggle:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
+    .outline-toggle svg { transition: transform 0.3s; }
+
+    .outline-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 12px;
+      padding: 6px 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .outline-search:focus-within { border-color: rgba(100,160,255,0.3); background: rgba(255,255,255,0.06); }
+    .outline-search svg { color: rgba(255,255,255,0.3); flex-shrink: 0; }
+    .outline-search input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 12px;
+      color: rgba(255,255,255,0.75);
+      font-family: inherit;
+    }
+    .outline-search input::placeholder { color: rgba(255,255,255,0.25); }
+
+    .outline-list {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 4px 0;
+      transition: opacity 0.2s;
+    }
+    .outline-list::-webkit-scrollbar { width: 4px; }
+    .outline-list::-webkit-scrollbar-track { background: transparent; }
+    .outline-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .outline-item {
+      display: flex;
+      align-items: center;
+      padding: 7px 12px 7px 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border-right: 2px solid transparent;
+    }
+    .outline-item:hover { background: rgba(255,255,255,0.05); }
+    .outline-item.active { background: rgba(100,160,255,0.08); border-right-color: rgba(100,160,255,0.6); }
+    .outline-item.active .item-text { color: rgba(140,180,255,0.95); }
+
+    .item-indent { flex-shrink: 0; }
+    .item-marker {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-right: 8px;
+    }
+    .marker-1 { background: rgba(100,160,255,0.8); width: 7px; height: 7px; }
+    .marker-2 { background: rgba(120,200,160,0.7); }
+    .marker-3 { background: rgba(255,180,100,0.6); }
+    .marker-4 { background: rgba(200,140,255,0.5); }
+
+    .item-text {
+      font-size: 12px;
+      line-height: 1.4;
+      color: rgba(255,255,255,0.6);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color 0.15s;
+      user-select: none;
+    }
+    .level-1 .item-text { font-weight: 600; font-size: 12.5px; color: rgba(255,255,255,0.8); }
+    .level-2 .item-text { font-weight: 500; color: rgba(255,255,255,0.7); }
+
+    @keyframes flash {
+      0% { background-color: rgba(100,160,255,0.15); box-shadow: 0 0 0 2px rgba(100,160,255,0.2); }
+      100% { background-color: transparent; box-shadow: none; }
+    }
+    .flash { animation: flash 1.2s ease-out; border-radius: 4px; }
+
+    @media (max-width: 768px) {
+      .outline-sidebar { width: 220px; max-height: 60vh; }
+      .outline-sidebar.collapsed { width: 32px; }
+      .main { max-width: 100%; padding-right: 60px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部导航 -->
+  <div class="topbar">
+    <div class="topbar-brand">📄 Page Outline Navigator <span>效果预览</span></div>
+  </div>
+
+  <!-- 模拟文章内容 -->
+  <div class="main">
+    <div class="tag">Chrome 插件</div>
+    <h1>Page Outline Navigator：智能页面大纲导航插件</h1>
+    <p>这是一个 Chrome 浏览器插件，能够自动识别网页中的标题结构，在右侧生成可交互的导航大纲。支持通用网页和热门问答网站的精准适配。</p>
+
+    <h2>核心功能</h2>
+    <p>插件的核心能力是自动解析页面结构，生成可视化的导航大纲，帮助用户快速定位和跳转到感兴趣的内容区域。</p>
+
+    <h3>自动标题识别</h3>
+    <p>插件会自动扫描页面中的 h1-h6 标题标签，构建层级化的目录结构。支持所有标准 HTML 页面，无需额外配置。</p>
+
+    <h3>热门网站适配</h3>
+    <p>针对知乎、Stack Overflow、CSDN、掘金、SegmentFault、简书、Medium、GitHub 等热门网站，使用专用的选择器进行精准的内容提取。</p>
+
+    <h4>知乎适配</h4>
+    <p>自动识别问题标题和各个回答中的小标题，生成问答结构化大纲。</p>
+
+    <h4>Stack Overflow 适配</h4>
+    <p>提取问题和回答中的代码块标题、步骤说明等结构化内容。</p>
+
+    <h3>实时高亮追踪</h3>
+    <p>随着页面滚动，侧边栏会自动高亮当前可见区域对应的标题，帮助用户了解自己在文档中的位置。</p>
+
+    <h2>交互设计</h2>
+    <p>交互设计参考了 aihot.virxact.com 的深色主题风格，采用现代感十足的暗色系配色方案。</p>
+
+    <h3>深色主题</h3>
+    <p>整体采用深蓝黑渐变背景，配合柔和的蓝绿色系高亮，视觉舒适不刺眼。标题层级通过不同颜色的圆点标记来区分。</p>
+
+    <h3>搜索过滤</h3>
+    <p>内置搜索框支持实时过滤标题内容，当页面标题较多时可以快速定位到目标章节。</p>
+
+    <h3>快捷键支持</h3>
+    <p>按下 <code>Alt + O</code> 即可快速切换侧边栏的显示和隐藏状态，不影响正常浏览体验。</p>
+
+    <h2>技术实现</h2>
+    <p>基于 Chrome Extension Manifest V3 规范开发，使用 Content Script 注入页面，轻量无侵入。</p>
+
+    <h3>DOM 解析策略</h3>
+    <p>优先使用站点专用选择器，通用回退到 h1-h6 标签。对 SPA 应用支持 MutationObserver 监听 DOM 变化，自动更新大纲。</p>
+
+    <h3>性能优化</h3>
+    <p>滚动高亮使用防抖机制（100ms），避免频繁计算。侧边栏使用 CSS 硬件加速动画，流畅不卡顿。</p>
+
+    <h2>使用方法</h2>
+    <p>安装后无需任何配置，打开任意包含标题结构的网页即可自动激活。</p>
+
+    <h3>安装步骤</h3>
+    <p>1. 打开 Chrome 扩展管理页面 <code>chrome://extensions/</code><br>
+    2. 开启「开发者模式」<br>
+    3. 点击「加载已解压的扩展程序」<br>
+    4. 选择插件目录即可</p>
+
+    <h2>适用场景</h2>
+    <p>适用于技术文档、博客文章、问答页面、API 文档等任何具有标题结构的网页内容。</p>
+  </div>
+
+  <!-- 右侧大纲导航 -->
+  <div class="outline-sidebar" id="sidebar">
+    <div class="outline-handle" onclick="document.getElementById('sidebar').classList.remove('collapsed')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12h18M3 6h18M3 18h18"/>
+      </svg>
+    </div>
+    <div class="outline-header">
+      <div class="outline-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 6h16M4 12h10M4 18h14"/>
+        </svg>
+        <span>页面大纲</span>
+      </div>
+      <div class="outline-count">14 项</div>
+      <button class="outline-toggle" onclick="document.getElementById('sidebar').classList.toggle('collapsed')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
+    </div>
+    <div class="outline-search">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+      <input type="text" placeholder="搜索标题…" id="searchInput" />
+    </div>
+    <div class="outline-list" id="outlineList">
+      <!-- JS 动态生成 -->
+    </div>
+  </div>
+
+  <script>
+    // 收集页面标题并生成大纲
+    const headings = document.querySelectorAll('h1, h2, h3, h4');
+    const list = document.getElementById('outlineList');
+    const searchInput = document.getElementById('searchInput');
+    let activeIndex = 0;
+
+    headings.forEach((h, i) => {
+      const level = parseInt(h.tagName.replace('H', ''));
+      const indent = Math.max(0, (level - 1) * 12);
+      const text = h.textContent.trim();
+      const truncated = text.length > 60 ? text.slice(0, 60) + '…' : text;
+
+      h.id = `heading-${i}`;
+
+      const item = document.createElement('div');
+      item.className = `outline-item level-${level}`;
+      item.dataset.index = i;
+      item.innerHTML = `
+        <div class="item-indent" style="width:${indent}px"></div>
+        <div class="item-marker marker-${level}"></div>
+        <div class="item-text" title="${text}">${truncated}</div>
+      `;
+
+      item.addEventListener('click', () => {
+        const rect = h.getBoundingClientRect();
+        const absoluteTop = rect.top + window.pageYOffset;
+        window.scrollTo({ top: absoluteTop - 80, behavior: 'smooth' });
+        h.classList.add('flash');
+        setTimeout(() => h.classList.remove('flash'), 1200);
+      });
+
+      list.appendChild(item);
+    });
+
+    // 高亮当前标题
+    function updateActive() {
+      const scrollY = window.pageYOffset + 120;
+      let idx = 0;
+      for (let i = headings.length - 1; i >= 0; i--) {
+        const rect = headings[i].getBoundingClientRect();
+        const absTop = rect.top + window.pageYOffset;
+        if (scrollY >= absTop) { idx = i; break; }
+      }
+      document.querySelectorAll('.outline-item').forEach((item, i) => {
+        item.classList.toggle('active', i === idx);
+      });
+    }
+
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+
+    // 搜索过滤
+    searchInput.addEventListener('input', () => {
+      const keyword = searchInput.value.toLowerCase().trim();
+      document.querySelectorAll('.outline-item').forEach(item => {
+        const text = item.querySelector('.item-text').textContent.toLowerCase();
+        item.style.display = keyword && !text.includes(keyword) ? 'none' : '';
+      });
+    });
+
+    // 快捷键
+    document.addEventListener('keydown', (e) => {
+      if (e.altKey && e.key === 'o') {
+        e.preventDefault();
+        document.getElementById('sidebar').classList.toggle('collapsed');
+      }
+    });
+  </script>
+</body>
+</html>

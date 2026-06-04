@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Chrome 插件实现流程图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0e14;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+    padding: 40px;
+    min-width: 1100px;
+  }
+  h1 {
+    text-align: center;
+    color: rgba(255,255,255,0.9);
+    font-size: 22px;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    text-align: center;
+    color: rgba(255,255,255,0.3);
+    font-size: 13px;
+    margin-bottom: 40px;
+  }
+
+  /* ── 流程图容器 ── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    position: relative;
+  }
+
+  /* ── 节点基础 ── */
+  .node {
+    position: relative;
+    padding: 14px 24px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.85);
+    text-align: center;
+    min-width: 200px;
+    max-width: 340px;
+    z-index: 2;
+  }
+
+  /* ── 节点类型 ── */
+  .start {
+    background: linear-gradient(135deg, rgba(100,160,255,0.2), rgba(100,160,255,0.08));
+    border: 1.5px solid rgba(100,160,255,0.4);
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .process {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .decision {
+    background: rgba(255,200,60,0.08);
+    border: 1.5px solid rgba(255,200,60,0.3);
+    transform: rotate(0deg);
+    border-radius: 10px;
+    position: relative;
+  }
+  .decision::before {
+    content: '◇';
+    position: absolute;
+    left: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255,200,60,0.6);
+    font-size: 10px;
+  }
+  .action {
+    background: rgba(100,200,160,0.1);
+    border: 1px solid rgba(100,200,160,0.3);
+  }
+  .output {
+    background: linear-gradient(135deg, rgba(180,140,255,0.15), rgba(180,140,255,0.05));
+    border: 1.5px solid rgba(180,140,255,0.35);
+    border-radius: 24px;
+  }
+  .highlight {
+    background: rgba(255,100,100,0.08);
+    border: 1.5px solid rgba(255,100,100,0.3);
+  }
+
+  /* ── 连线箭头 ── */
+  .arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: rgba(255,255,255,0.2);
+    font-size: 10px;
+    position: relative;
+    height: 36px;
+  }
+  .arrow::before {
+    content: '';
+    width: 1px;
+    height: 24px;
+    background: rgba(255,255,255,0.15);
+  }
+  .arrow::after {
+    content: '▼';
+    font-size: 8px;
+    color: rgba(255,255,255,0.25);
+    margin-top: -4px;
+  }
+  .arrow-label {
+    position: absolute;
+    right: -60px;
+    top: 8px;
+    font-size: 10px;
+    color: rgba(255,200,60,0.6);
+    white-space: nowrap;
+  }
+  .arrow-label.left {
+    right: auto;
+    left: -60px;
+  }
+
+  /* ── 分支布局 ── */
+  .branch {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    position: relative;
+  }
+  .branch-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    min-width: 260px;
+  }
+  .branch-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 14px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+  .tag-ai { background: rgba(100,200,160,0.15); color: rgba(100,200,160,0.8); }
+  .tag-generic { background: rgba(100,160,255,0.15); color: rgba(100,160,255,0.8); }
+
+  /* ── 分支连接线 ── */
+  .branch-line {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 0;
+  }
+  .branch-line::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: calc(50% - 170px);
+    right: calc(50% - 170px);
+    height: 1px;
+    background: rgba(255,255,255,0.12);
+  }
+  .branch-line .arm {
+    position: absolute;
+    top: 0;
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,0.12);
+  }
+  .branch-line .arm-l { left: calc(50% - 170px); }
+  .branch-line .arm-r { right: calc(50% - 170px); }
+
+  /* ── 注释框 ── */
+  .note {
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    max-width: 320px;
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+  .note code {
+    background: rgba(100,160,255,0.1);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: rgba(140,180,255,0.7);
+    font-size: 11px;
+  }
+
+  /* ── 合并点 ── */
+  .merge {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.3);
+    font-size: 10px;
+    z-index: 2;
+  }
+
+  /* ── 图例 ── */
+  .legend {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+  .dot-decision { background: rgba(255,200,60,0.2); border: 1px solid rgba(255,200,60,0.4); }
+  .dot-process { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); }
+  .dot-action { background: rgba(100,200,160,0.12); border: 1px solid rgba(100,200,160,0.3); }
+  .dot-output { background: rgba(180,140,255,0.15); border: 1px solid rgba(180,140,255,0.35); }
+</style>
+</head>
+<body>
+
+<h1>Page Outline Navigator — 实现流程图</h1>
+<p class="subtitle">Chrome 插件如何检测问答类型 & 进行位置索引</p>
+
+<div class="flow">
+
+  <!-- 入口 -->
+  <div class="node start">📄 页面加载完成 (document idle)</div>
+  <div class="arrow"></div>
+
+  <div class="node process">🔍 读取 window.location.hostname</div>
+  <div class="arrow"></div>
+
+  <!-- 站点匹配 -->
+  <div class="node decision">📋 匹配 SITE_SELECTORS 配置表<br><span style="font-size:11px;color:rgba(255,255,255,0.4)">22 个站点域名规则</span></div>
+  <div class="arrow"></div>
+
+  <!-- 分支：AI 聊天 vs 通用 -->
+  <div class="branch">
+    <div class="branch-col">
+      <div class="branch-tag tag-ai">🤖 AI 聊天平台</div>
+      <div class="node action" style="font-size:12px">
+        使用专用选择器<br>
+        <span style="color:rgba(255,255,255,0.4);font-size:11px">heading / container / chatMode</span>
+      </div>
+      <div class="arrow"></div>
+      <div class="node process" style="font-size:12px">
+        ① 扫描 AI 回答中的 h1-h4
+      </div>
+      <div class="arrow"></div>
+      <div class="node decision" style="font-size:12px;min-width:180px">
+        标题数量 ≥ 2 ?
+      </div>
+      <div class="arrow"></div>
+
+      <!-- 进入 chatMode 分支 -->
+      <div style="display:flex;gap:24px;align-items:flex-start">
+        <div class="branch-col" style="min-width:140px">
+          <div class="branch-tag" style="background:rgba(100,200,160,0.12);color:rgba(100,200,160,0.7);font-size:10px">≥ 2 个</div>
+          <div class="node output" style="font-size:11px;min-width:120px;padding:8px 12px">
+            ✅ 直接使用<br>标题作为大纲
+          </div>
+        </div>
+        <div class="branch-col" style="min-width:140px">
+          <div class="branch-tag" style="background:rgba(255,100,100,0.12);color:rgba(255,100,100,0.7);font-size:10px">< 2 个</div>
+          <div class="node highlight" style="font-size:11px;min-width:120px;padding:8px 12px">
+            🔄 进入<br>ChatMode
+          </div>
+          <div class="arrow"></div>
+          <div class="note" style="font-size:10px;max-width:160px;text-align:center">
+            <code>collectChatTurns()</code>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="branch-col">
+      <div class="branch-tag tag-generic">🌐 通用网站</div>
+      <div class="node process" style="font-size:12px">
+        使用通用选择器<br>
+        <span style="color:rgba(255,255,255,0.4);font-size:11px">h1, h2, h3, h4, h5, h6</span>
+      </div>
+      <div class="arrow"></div>
+      <div class="node process" style="font-size:12px">
+        扫描 container 内<br>所有标题标签
+      </div>
+      <div class="arrow"></div>
+      <div class="node output" style="font-size:11px;min-width:140px;padding:8px 12px">
+        ✅ 直接构建<br>标题大纲
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow" style="height:48px"></div>
+
+  <!-- ChatMode 详细流程 -->
+  <div class="node decision" style="border-color:rgba(100,200,160,0.4);background:rgba(100,200,160,0.06);min-width:380px">
+    🔄 <strong>ChatMode 三步提取策略</strong>
+  </div>
+  <div class="arrow"></div>
+
+  <!-- 三步策略 -->
+  <div class="branch" style="gap:20px">
+    <div class="branch-col" style="min-width:200px">
+      <div class="branch-tag" style="background:rgba(100,200,160,0.12);color:rgba(100,200,160,0.7);font-size:10px">Step 1</div>
+      <div class="node action" style="font-size:12px;min-width:180px">
+        💬 提取用户提问<br>
+        <span style="font-size:10px;color:rgba(255,255,255,0.4)">questionSelector</span>
+      </div>
+      <div class="note" style="font-size:10px;max-width:180px">
+        <code>[data-message-author-role="user"]</code><br>
+        <code>[data-is-human="true"]</code><br>
+        取文本前 50 字，加 💬 前缀
+      </div>
+    </div>
+    <div class="branch-col" style="min-width:200px">
+      <div class="branch-tag" style="background:rgba(100,160,255,0.12);color:rgba(100,160,255,0.7);font-size:10px">Step 2</div>
+      <div class="node action" style="font-size:12px;min-width:180px">
+        📑 提取 AI 回答标题<br>
+        <span style="font-size:10px;color:rgba(255,255,255,0.4)">answerSelector</span>
+      </div>
+      <div class="note" style="font-size:10px;max-width:180px">
+        <code>[data-message-author-role="assistant"]</code><br>
+        内部的 h1-h4 作为子章节<br>
+        保留原始层级 level
+      </div>
+    </div>
+    <div class="branch-col" style="min-width:200px">
+      <div class="branch-tag" style="background:rgba(255,200,60,0.12);color:rgba(255,200,60,0.7);font-size:10px">Step 3 (兜底)</div>
+      <div class="node action" style="font-size:12px;min-width:180px">
+        🔁 通用轮次提取<br>
+        <span style="font-size:10px;color:rgba(255,255,255,0.4)">turnSelector</span>
+      </div>
+      <div class="note" style="font-size:10px;max-width:180px">
+        遍历每条消息块<br>
+        取第一段文字作为标题<br>
+        判断角色：末尾是？→ 💬 否则 🤖
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow" style="height:48px"></div>
+
+  <!-- 合并：ID 赋值 -->
+  <div class="node process" style="min-width:380px">
+    🏷️ <strong>为每个元素分配唯一 ID</strong><br>
+    <span style="font-size:11px;color:rgba(255,255,255,0.4)">
+      标题 → <code>__outline_heading_N</code> &nbsp;|&nbsp;
+      提问 → <code>__outline_q_N</code> &nbsp;|&nbsp;
+      回答 → <code>__outline_a_N_M</code> &nbsp;|&nbsp;
+      轮次 → <code>__outline_turn_N</code>
+    </span>
+  </div>
+  <div class="arrow"></div>
+
+  <!-- 渲染侧边栏 -->
+  <div class="node output" style="min-width:380px">
+    🎨 <strong>渲染右侧浮动侧边栏</strong><br>
+    <span style="font-size:11px;opacity:0.7">
+      层级缩进 · 颜色圆点标记 · 💬/🤖 图标 · 搜索过滤 · 收起/展开
+    </span>
+  </div>
+  <div class="arrow"></div>
+
+  <!-- 滚动追踪 -->
+  <div class="node process" style="min-width:380px">
+    📍 <strong>滚动位置索引 (scroll → 高亮)</strong><br>
+    <span style="font-size:11px;color:rgba(255,255,255,0.4)">
+      window.scrollY + offset → 反向遍历 headings → 找到 ≤ scrollTop 的最后一个 → 高亮对应侧边栏项
+    </span>
+  </div>
+  <div class="arrow"></div>
+
+  <!-- 点击跳转 -->
+  <div class="node process" style="min-width:380px">
+    🖱️ <strong>点击跳转 (click → scroll)</strong><br>
+    <span style="font-size:11px;color:rgba(255,255,255,0.4)">
+      element.getBoundingClientRect() → absoluteTop - 80px offset → smooth scroll → 闪烁高亮动画
+    </span>
+  </div>
+  <div class="arrow"></div>
+
+  <!-- 动态监听 -->
+  <div class="node highlight" style="min-width:380px">
+    🔄 <strong>MutationObserver 动态监听</strong><br>
+    <span style="font-size:11px;color:rgba(255,255,255,0.5)">
+      URL 变化 → 重新扫描 &nbsp;|&nbsp; AI 聊天新增消息 → 800ms 防抖后刷新大纲
+    </span>
+  </div>
+
+</div>
+
+<!-- 图例 -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot dot-decision"></div>判断/分支</div>
+  <div class="legend-item"><div class="legend-dot dot-process"></div>处理逻辑</div>
+  <div class="legend-item"><div class="legend-dot dot-action"></div>核心动作</div>
+  <div class="legend-item"><div class="legend-dot dot-output"></div>输出/结果</div>
+</div>
+
+</body>
+</html>
