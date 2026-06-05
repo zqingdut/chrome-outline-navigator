@@ -350,3 +350,32 @@
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.8);
 }
+
+
+/* ── 操作按钮（搜索+复制） ──────────────────── */
+.__outline_action_btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+  margin-left: 2px;
+  opacity: 0;
+}
+.__outline_row:hover .__outline_action_btn { opacity: 1; }
+.__outline_action_btn:hover {
+  background: rgba(100, 160, 255, 0.15);
+  color: rgba(100, 160, 255, 0.9);
+}
+.__outline_copy_btn:hover {
+  background: rgba(52, 199, 89, 0.15);
+  color: rgba(52, 199, 89, 0.9);
+}

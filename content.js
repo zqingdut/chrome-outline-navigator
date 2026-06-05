@@ -295,7 +295,10 @@
       </button>` : `<div class="__outline_expand_placeholder"></div>`}
       <div class="__outline_marker __outline_marker_level_${node.level}"></div>
       <div class="__outline_text" title="${node.text}">${trunc(node.text, 45)}</div>
-      <button class="__outline_search_btn" title="搜索此内容">
+      <button class="__outline_action_btn __outline_copy_btn" title="复制内容">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </button>
+      <button class="__outline_action_btn __outline_search_btn" title="搜索此内容">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
       </button>`;
 
@@ -329,6 +332,16 @@
       });
     }
 
+    // 复制按钮
+    const copyBtn = row.querySelector('.__outline_copy_btn');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const text = collectNodeText(node);
+        copyToClipboard(text, copyBtn);
+      });
+    }
+
     item.appendChild(row);
 
     if (hasKids) {
@@ -358,6 +371,81 @@
         btn.classList.add('__outline_collapsed_node');
         cc.style.display = 'none';
       }
+    });
+  }
+
+  /* ── 收集节点及子节点的文本 ── */
+  function collectNodeText(node) {
+    const parts = [];
+    // 收集当前元素的文本
+    const elText = node.element.innerText || node.element.textContent || '';
+    parts.push(stripMarkdown(elText.trim()));
+
+    // 递归收集子节点
+    if (node.children) {
+      node.children.forEach(child => {
+        parts.push(collectNodeText(child));
+      });
+    }
+    return parts.filter(p => p.length > 0).join('
+
+');
+  }
+
+  /* ── 过滤 Markdown 标记 ── */
+  function stripMarkdown(text) {
+    return text
+      .replace(/^#{1,6}\s+/gm, '')      // 标题 #
+      .replace(/\*\*(.+?)\*\*/g, '') // 粗体 **text**
+      .replace(/\*(.+?)\*/g, '')      // 斜体 *text*
+      .replace(/__(.+?)__/g, '')        // 粗体 __text__
+      .replace(/_(.+?)_/g, '')          // 斜体 _text_
+      .replace(/~~(.+?)~~/g, '')        // 删除线
+      .replace(/`{3}[\s\S]*?`{3}/g, m => { // 代码块
+        return m.replace(/^`{3}\w*
+?/, '').replace(/`{3}$/, '');
+      })
+      .replace(/`(.+?)`/g, '')        // 行内代码
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '') // 链接 [text](url)
+      .replace(/!\[([^\]]*)\]\([^)]+\)/g, '') // 图片 ![alt](url)
+      .replace(/^>\s+/gm, '')             // 引用 >
+      .replace(/^[-*+]\s+/gm, '• ')      // 无序列表
+      .replace(/^\d+\.\s+/gm, m => m)   // 有序列表保留
+      .replace(/^---+$/gm, '')             // 分割线
+      .replace(/
+{3,}/g, '
+
+')       // 多余空行
+      .trim();
+  }
+
+  /* ── 复制到剪贴板 ── */
+  function copyToClipboard(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      // 显示成功反馈
+      const origHTML = btn.innerHTML;
+      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>';
+      btn.style.opacity = '1';
+      setTimeout(() => {
+        btn.innerHTML = origHTML;
+        btn.style.opacity = '';
+      }, 1500);
+    }).catch(() => {
+      // fallback: 用 textarea 复制
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;left:-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      const origHTML = btn.innerHTML;
+      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>';
+      btn.style.opacity = '1';
+      setTimeout(() => {
+        btn.innerHTML = origHTML;
+        btn.style.opacity = '';
+      }, 1500);
     });
   }
 
