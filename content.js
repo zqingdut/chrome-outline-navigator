@@ -523,7 +523,15 @@
   // ── 初始化 ──────────────────────────────────────
   function init() {
     const items = collectAll();
+    const existing = document.getElementById('__outline_sidebar');
+    // 保留用户当前的展开/收起状态
+    const wasCollapsed = existing ? existing.classList.contains('__outline_collapsed') : true;
     createSidebar(items);
+    // 恢复状态
+    if (!wasCollapsed) {
+      const sb = document.getElementById('__outline_sidebar');
+      if (sb) sb.classList.remove('__outline_collapsed');
+    }
     console.log(`[Outline Navigator] 检测到 ${items.length} 个导航项`);
   }
 
@@ -549,9 +557,16 @@
       setTimeout(init, 500);
       return;
     }
-    // 检测新增的内容节点
+    // 检测新增的内容节点（排除侧边栏自身的变动）
     for (const m of mutations) {
+      // 跳过侧边栏内部的变化
+      if (m.target.id === '__outline_sidebar' || m.target.closest?.('__outline_sidebar')) continue;
       if (m.addedNodes.length > 0) {
+        // 确认新增的不是侧边栏自身
+        const isSidebar = Array.from(m.addedNodes).some(n =>
+          n.id === '__outline_sidebar' || n.nodeType !== 1
+        );
+        if (isSidebar) continue;
         debouncedRefresh();
         break;
       }
