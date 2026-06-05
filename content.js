@@ -387,9 +387,7 @@
         parts.push(collectNodeText(child));
       });
     }
-    return parts.filter(p => p.length > 0).join('
-
-');
+    return parts.filter(p => p.length > 0).join('\n');
   }
 
   /* ── 过滤 Markdown 标记 ── */
@@ -402,8 +400,7 @@
       .replace(/_(.+?)_/g, '')          // 斜体 _text_
       .replace(/~~(.+?)~~/g, '')        // 删除线
       .replace(/`{3}[\s\S]*?`{3}/g, m => { // 代码块
-        return m.replace(/^`{3}\w*
-?/, '').replace(/`{3}$/, '');
+        return m.replace(/^`{3}\w*\n?/, '').replace(/`{3}$/, '');
       })
       .replace(/`(.+?)`/g, '')        // 行内代码
       .replace(/\[([^\]]+)\]\([^)]+\)/g, '') // 链接 [text](url)
@@ -412,10 +409,7 @@
       .replace(/^[-*+]\s+/gm, '• ')      // 无序列表
       .replace(/^\d+\.\s+/gm, m => m)   // 有序列表保留
       .replace(/^---+$/gm, '')             // 分割线
-      .replace(/
-{3,}/g, '
-
-')       // 多余空行
+      .replace(/\n{3,}/g, '\n\n')       // 多余空行
       .trim();
   }
 
