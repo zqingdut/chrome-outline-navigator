@@ -359,11 +359,42 @@
   }
 
   // ══════════════════════════════════════════════════
+  //  构建层级树结构
+  // ══════════════════════════════════════════════════
+  function buildTree(items) {
+    const tree = [];
+    const stack = []; // 维护当前层级栈
+
+    items.forEach(item => {
+      const node = { ...item, children: [] };
+
+      // 找到正确的父节点
+      while (stack.length > 0 && stack[stack.length - 1].level >= node.level) {
+        stack.pop();
+      }
+
+      if (stack.length === 0) {
+        // 顶层节点
+        tree.push(node);
+      } else {
+        // 作为子节点添加到父节点
+        stack[stack.length - 1].children.push(node);
+      }
+
+      stack.push(node);
+    });
+
+    return tree;
+  }
+
+  // ══════════════════════════════════════════════════
   //  侧边栏渲染
   // ══════════════════════════════════════════════════
   function createSidebar(items) {
     const old = document.getElementById('__outline_sidebar');
     if (old) old.remove();
+
+    const tree = buildTree(items);
 
     const sidebar = document.createElement('div');
     sidebar.id = '__outline_sidebar';
@@ -383,7 +414,7 @@
           <span>页面大纲</span>
         </div>
         <div class="__outline_count">${items.length} 项</div>
-        <button class="__outline_toggle" title="收起">
+        <button class="__outline_toggle" title="收起侧边栏">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M15 18l-6-6 6-6"/>
           </svg>
@@ -405,33 +436,94 @@
     `;
 
     const list = sidebar.querySelector('.__outline_list');
-    items.forEach((h, i) => {
-      const item = document.createElement('div');
-      item.className = `__outline_item __outline_level_${h.level}`;
-      if (h.type === 'question') item.classList.add('__outline_question');
-      if (h.type === 'answer') item.classList.add('__outline_answer');
-      item.dataset.index = i;
-      item.dataset.targetId = h.id;
-
-      const indent = Math.max(0, (h.level - 1) * 12);
-      item.innerHTML = `
-        <div class="__outline_item_indent" style="width:${indent}px"></div>
-        <div class="__outline_item_marker __outline_marker_level_${h.level}"></div>
-        <div class="__outline_item_text" title="${h.text}">${trunc(h.text)}</div>
-      `;
-
-      item.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        scrollToItem(h);
-      });
-
-      list.appendChild(item);
-    });
+    tree.forEach(node => renderTreeNode(list, node, 0));
 
     document.body.appendChild(sidebar);
     bindEvents(sidebar, items);
     return sidebar;
+  }
+
+  // ══════════════════════════════════════════════════
+  //  渲染树节点
+  // ══════════════════════════════════════════════════
+  function renderTreeNode(parent, node, depth) {
+    const hasChildren = node.children && node.children.length > 0;
+    const item = document.createElement('div');
+    item.className = `__outline_node`;
+
+    // 节点行
+    const row = document.createElement('div');
+    row.className = `__outline_row __outline_level_${node.level}`;
+    if (node.type === 'question') row.classList.add('__outline_question');
+    if (node.type === 'answer') row.classList.add('__outline_answer');
+    row.dataset.targetId = node.id;
+
+    const indent = depth * 16;
+
+    row.innerHTML = `
+      <div class="__outline_indent" style="width:${indent}px"></div>
+      ${hasChildren ? `
+        <button class="__outline_expand" title="展开/收起" data-expanded="true">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
+      ` : `
+        <div class="__outline_expand_placeholder"></div>
+      `}
+      <div class="__outline_marker __outline_marker_level_${node.level}"></div>
+      <div class="__outline_text" title="${node.text}">${trunc(node.text, 45)}</div>
+      <button class="__outline_search_btn" title="搜索此内容">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+      </button>
+    `;
+
+    // 点击行 → 跳转
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.__outline_expand') || e.target.closest('.__outline_search_btn')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      scrollToItem(node);
+    });
+
+    // 点击展开/收起
+    const expandBtn = row.querySelector('.__outline_expand');
+    if (expandBtn) {
+      expandBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const expanded = expandBtn.dataset.expanded === 'true';
+        expandBtn.dataset.expanded = expanded ? 'false' : 'true';
+        expandBtn.classList.toggle('__outline_collapsed_node', expanded);
+        const childContainer = item.querySelector('.__outline_children');
+        if (childContainer) {
+          childContainer.style.display = expanded ? 'none' : 'block';
+        }
+      });
+    }
+
+    // 点击搜索
+    const searchBtn = row.querySelector('.__outline_search_btn');
+    if (searchBtn) {
+      searchBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const searchText = node.text.replace(/^[💬🤖]\s*/, '');
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(searchText)}`, '_blank');
+      });
+    }
+
+    item.appendChild(row);
+
+    // 子节点容器
+    if (hasChildren) {
+      const childContainer = document.createElement('div');
+      childContainer.className = '__outline_children';
+      node.children.forEach(child => renderTreeNode(childContainer, child, depth + 1));
+      item.appendChild(childContainer);
+    }
+
+    parent.appendChild(item);
   }
 
   // ── 滚动跳转 ──────────────────────────────────────

@@ -162,7 +162,6 @@
 .__outline_search_input::placeholder {
   color: rgba(255, 255, 255, 0.25);
 }
-
 /* ── 列表 ────────────────────────────────── */
 .__outline_list {
   flex: 1;
@@ -171,114 +170,11 @@
   padding: 4px 0;
   transition: opacity 0.2s;
 }
+.__outline_list::-webkit-scrollbar { width: 4px; }
+.__outline_list::-webkit-scrollbar-track { background: transparent; }
+.__outline_list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
+.__outline_list::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
 
-.__outline_list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.__outline_list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.__outline_list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-}
-
-.__outline_list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* ── 列表项 ────────────────────────────────── */
-.__outline_item {
-  display: flex;
-  align-items: center;
-  padding: 7px 12px 7px 8px;
-  cursor: pointer;
-  transition: all 0.15s;
-  border-right: 2px solid transparent;
-  position: relative;
-}
-
-.__outline_item:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.__outline_item.__outline_active {
-  background: rgba(100, 160, 255, 0.08);
-  border-right-color: rgba(100, 160, 255, 0.6);
-}
-
-.__outline_item.__outline_active .__outline_item_text {
-  color: rgba(140, 180, 255, 0.95);
-}
-
-.__outline_item_indent {
-  flex-shrink: 0;
-}
-
-/* ── 级别标记点 ────────────────────────────── */
-.__outline_item_marker {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  margin-right: 8px;
-  transition: all 0.2s;
-}
-
-.__outline_marker_level_1 {
-  background: rgba(100, 160, 255, 0.8);
-  width: 7px;
-  height: 7px;
-}
-
-.__outline_marker_level_2 {
-  background: rgba(120, 200, 160, 0.7);
-}
-
-.__outline_marker_level_3 {
-  background: rgba(255, 180, 100, 0.6);
-}
-
-.__outline_marker_level_4 {
-  background: rgba(200, 140, 255, 0.5);
-}
-
-.__outline_marker_level_5 {
-  background: rgba(255, 255, 255, 0.25);
-  width: 4px;
-  height: 4px;
-}
-
-.__outline_marker_level_6 {
-  background: rgba(255, 255, 255, 0.15);
-  width: 3px;
-  height: 3px;
-}
-
-/* ── 列表项文字 ────────────────────────────── */
-.__outline_item_text {
-  font-size: 12px;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.6);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: color 0.15s;
-  user-select: none;
-}
-
-.__outline_level_1 .__outline_item_text {
-  font-weight: 600;
-  font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.__outline_level_2 .__outline_item_text {
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
-}
 
 /* ── 空状态 ────────────────────────────────── */
 .__outline_empty {
@@ -353,4 +249,75 @@
   #__outline_sidebar.__outline_collapsed {
     width: 32px;
   }
+}
+
+/* ══════════════════════════════════════════════════
+   树形结构 + 展开收起 + 搜索按钮
+   ══════════════════════════════════════════════════ */
+
+.__outline_node {}
+.__outline_children {}
+
+.__outline_row {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px 6px 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-right: 2px solid transparent;
+  min-height: 32px;
+}
+.__outline_row:hover { background: rgba(255, 255, 255, 0.05); }
+.__outline_row.__outline_active { background: rgba(100, 160, 255, 0.08); border-right-color: rgba(100, 160, 255, 0.6); }
+.__outline_row.__outline_active .__outline_text { color: rgba(140, 180, 255, 0.95); }
+
+.__outline_indent { flex-shrink: 0; }
+
+.__outline_expand {
+  display: flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border: none;
+  background: rgba(255, 255, 255, 0.04); border-radius: 4px;
+  color: rgba(255, 255, 255, 0.4); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0; padding: 0; margin-right: 4px;
+}
+.__outline_expand:hover { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.8); }
+.__outline_expand svg { transition: transform 0.2s; }
+.__outline_expand.__outline_collapsed_node svg { transform: rotate(-90deg); }
+.__outline_expand_placeholder { width: 18px; height: 18px; flex-shrink: 0; margin-right: 4px; }
+
+.__outline_marker { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-right: 6px; }
+.__outline_marker_level_1 { background: rgba(100, 160, 255, 0.8); width: 8px; height: 8px; }
+.__outline_marker_level_2 { background: rgba(120, 200, 160, 0.7); }
+.__outline_marker_level_3 { background: rgba(255, 180, 100, 0.6); }
+.__outline_marker_level_4 { background: rgba(200, 140, 255, 0.5); }
+.__outline_marker_level_5, .__outline_marker_level_6 { background: rgba(255, 255, 255, 0.25); width: 4px; height: 4px; }
+
+.__outline_text {
+  flex: 1; font-size: 12px; line-height: 1.4;
+  color: rgba(255, 255, 255, 0.6); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+  transition: color 0.15s; user-select: none; min-width: 0;
+}
+.__outline_level_1 > .__outline_text { font-weight: 600; font-size: 12.5px; color: rgba(255, 255, 255, 0.8); }
+.__outline_level_2 > .__outline_text { font-weight: 500; color: rgba(255, 255, 255, 0.7); }
+
+.__outline_search_btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border: none; background: transparent;
+  border-radius: 4px; color: rgba(255, 255, 255, 0.2); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0; padding: 0; margin-left: 4px; opacity: 0;
+}
+.__outline_row:hover .__outline_search_btn { opacity: 1; }
+.__outline_search_btn:hover { background: rgba(100, 160, 255, 0.15); color: rgba(100, 160, 255, 0.9); }
+
+.__outline_question > .__outline_text { color: rgba(120, 200, 160, 0.85); }
+.__outline_question > .__outline_marker { background: rgba(120, 200, 160, 0.7) !important; }
+.__outline_answer > .__outline_text { color: rgba(180, 140, 255, 0.75); }
+.__outline_answer > .__outline_marker { background: rgba(180, 140, 255, 0.6) !important; }
+
+@media (max-width: 768px) {
+  #__outline_sidebar { width: 240px; max-height: 60vh; }
+  #__outline_sidebar.__outline_collapsed { width: 32px; }
+  .__outline_search_btn { opacity: 1; width: 28px; height: 28px; }
+  .__outline_expand { width: 22px; height: 22px; }
 }
