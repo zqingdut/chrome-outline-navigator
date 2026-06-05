@@ -321,3 +321,32 @@
   .__outline_search_btn { opacity: 1; width: 28px; height: 28px; }
   .__outline_expand { width: 22px; height: 22px; }
 }
+
+/* ── 头部操作按钮组 ──────────────────────────── */
+.__outline_header_actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.__outline_scroll_btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.__outline_scroll_btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
