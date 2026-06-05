@@ -19,7 +19,6 @@
   };
 
   const collapseState = new Map();
-  let lastRefreshTime = 0;
   let lastContentHash = '';
 
   function trunc(s, n = CONFIG.truncLen) {
@@ -271,7 +270,8 @@
     tree.forEach(node => renderTreeNode(list, node, 0));
     document.body.appendChild(sidebar);
     bindEvents(sidebar, items);
-    restoreCollapseState();
+    // 延迟一帧确保 DOM 已渲染
+    requestAnimationFrame(() => restoreCollapseState());
     return sidebar;
   }
 
@@ -314,7 +314,9 @@
         expandBtn.classList.toggle('__outline_collapsed_node', expanded);
         const cc = item.querySelector('.__outline_children');
         if (cc) cc.style.display = expanded ? 'none' : 'block';
-        collapseState.set(node.id, expanded);
+        // 用元素的 outerHTML 前 100 字符作为稳定 key
+        const stableKey = node.element.outerHTML.slice(0, 100);
+        collapseState.set(stableKey, expanded);
       });
     }
 
@@ -339,10 +341,16 @@
   }
 
   function restoreCollapseState() {
-    collapseState.forEach((isCollapsed, nodeId) => {
+    if (collapseState.size === 0) return;
+    document.querySelectorAll('.__outline_node').forEach(node => {
+      const targetId = node.querySelector('.__outline_row')?.dataset.targetId;
+      if (!targetId) return;
+      const el = document.getElementById(targetId);
+      if (!el) return;
+      const stableKey = el.outerHTML.slice(0, 100);
+      if (!collapseState.has(stableKey)) return;
+      const isCollapsed = collapseState.get(stableKey);
       if (!isCollapsed) return;
-      const node = document.querySelector(`[data-node-id="${nodeId}"]`);
-      if (!node) return;
       const btn = node.querySelector('.__outline_expand');
       const cc = node.querySelector('.__outline_children');
       if (btn && cc) {
@@ -457,17 +465,21 @@
 
   /* ── 初始化 + 智能刷新 ── */
   function init() {
-    const now = Date.now();
-    if (now - lastRefreshTime < CONFIG.minRefreshInterval) return;
     const items = collectAll();
     const hash = contentHash();
+    // 内容没变就不重建侧边栏（但折叠状态已通过 collapseState 保持）
     if (hash === lastContentHash) return;
-    lastRefreshTime = now;
     lastContentHash = hash;
+
     const existing = document.getElementById('__outline_sidebar');
     const wasCollapsed = existing ? existing.classList.contains('__outline_collapsed') : true;
+
     createSidebar(items);
-    if (!wasCollapsed) { const sb = document.getElementById('__outline_sidebar'); if (sb) sb.classList.remove('__outline_collapsed'); }
+
+    if (!wasCollapsed) {
+      const sb = document.getElementById('__outline_sidebar');
+      if (sb) sb.classList.remove('__outline_collapsed');
+    }
     console.log(`[Outline Navigator] 检测到 ${items.length} 个导航项`);
   }
 
@@ -476,7 +488,11 @@
 
   let lastUrl = location.href;
   let refreshTimer = null;
-  function debouncedRefresh() { if (refreshTimer) clearTimeout(refreshTimer); refreshTimer = setTimeout(init, CONFIG.refreshDebounce); }
+  function debouncedRefresh() {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    // 用较短的防抖，让对话切换能及时响应
+    refreshTimer = setTimeout(init, 800);
+  }
 
   const observer = new MutationObserver(mutations => {
     if (location.href !== lastUrl) { lastUrl = location.href; setTimeout(init, 500); return; }
