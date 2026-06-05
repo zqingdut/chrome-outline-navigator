@@ -436,22 +436,53 @@
 
   // ── 滚动跳转 ──────────────────────────────────────
   function scrollToItem(item) {
-    const rect = item.element.getBoundingClientRect();
-    const absTop = rect.top + window.pageYOffset;
-    window.scrollTo({ top: absTop - CONFIG.scrollOffset, behavior: 'smooth' });
+    // 用 scrollIntoView 代替 window.scrollTo，兼容内部滚动容器
+    item.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     item.element.classList.add('__outline_flash');
     setTimeout(() => item.element.classList.remove('__outline_flash'), 1200);
+  }
+
+  // ── 找到元素所在的滚动容器 ────────────────────────
+  function findScrollParent(el) {
+    let cur = el.parentElement;
+    while (cur && cur !== document.body) {
+      const style = getComputedStyle(cur);
+      const ov = style.overflowY;
+      if ((ov === 'auto' || ov === 'scroll') && cur.scrollHeight > cur.clientHeight + 5) {
+        return cur;
+      }
+      cur = cur.parentElement;
+    }
+    return window; // fallback 到 window
   }
 
   // ── 滚动高亮 ──────────────────────────────────────
   function updateHighlight(items) {
     if (!items.length) return;
     let active = 0;
-    const scrollY = window.pageYOffset + CONFIG.scrollOffset + 40;
+
+    // 找到第一个元素的滚动容器
+    const scrollContainer = items[0] ? findScrollParent(items[0].element) : window;
+    const scrollTop = scrollContainer === window
+      ? window.pageYOffset
+      : scrollContainer.scrollTop;
+    const offset = CONFIG.scrollOffset + 40;
+
     for (let i = items.length - 1; i >= 0; i--) {
       const r = items[i].element.getBoundingClientRect();
-      if (r.top + window.pageYOffset <= scrollY) { active = i; break; }
+      let elementTop;
+      if (scrollContainer === window) {
+        elementTop = r.top + window.pageYOffset;
+      } else {
+        const cr = scrollContainer.getBoundingClientRect();
+        elementTop = r.top - cr.top + scrollContainer.scrollTop;
+      }
+      if (elementTop <= scrollTop + offset) {
+        active = i;
+        break;
+      }
     }
+
     document.querySelectorAll('.__outline_item').forEach((el, i) => {
       el.classList.toggle('__outline_active', i === active);
     });
@@ -484,11 +515,18 @@
       });
     });
 
+    // 监听滚动（同时监听 window 和内部容器）
     let timer = null;
-    window.addEventListener('scroll', () => {
+    const onScroll = () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => updateHighlight(items), CONFIG.highlightDebounce);
-    });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // 也监听内部滚动容器
+    if (items[0]) {
+      const sp = findScrollParent(items[0].element);
+      if (sp !== window) sp.addEventListener('scroll', onScroll, { passive: true });
+    }
     updateHighlight(items);
   }
 
