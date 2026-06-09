@@ -579,9 +579,9 @@
   const observer = new MutationObserver(mutations => {
     if (location.href !== lastUrl) { lastUrl = location.href; setTimeout(init, 500); return; }
     for (const m of mutations) {
-      if (m.target.id === '__outline_sidebar' || m.target.closest?.('__outline_sidebar')) continue;
+      if (m.target.id === '__outline_sidebar' || m.target.closest?.('#__outline_sidebar')) continue;
       if (m.addedNodes.length > 0) {
-        const isSidebar = Array.from(m.addedNodes).some(n => n.id === '__outline_sidebar' || (n.nodeType !== 1 && n.nodeType !== 3));
+        const isSidebar = Array.from(m.addedNodes).some(n => n.id === '__outline_sidebar');
         if (isSidebar) continue;
         debouncedRefresh();
         break;

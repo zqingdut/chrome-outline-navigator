@@ -223,19 +223,19 @@
 }
 
 /* ── AI 聊天模式样式 ──────────────────────── */
-.__outline_question .__outline_item_text {
+.__outline_question .__outline_text {
   color: rgba(120, 200, 160, 0.85);
 }
 
-.__outline_question .__outline_item_marker {
+.__outline_question .__outline_marker {
   background: rgba(120, 200, 160, 0.7) !important;
 }
 
-.__outline_answer .__outline_item_text {
+.__outline_answer .__outline_text {
   color: rgba(180, 140, 255, 0.75);
 }
 
-.__outline_answer .__outline_item_marker {
+.__outline_answer .__outline_marker {
   background: rgba(180, 140, 255, 0.6) !important;
 }
 
