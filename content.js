@@ -376,18 +376,48 @@
 
   /* ── 收集节点及子节点的文本 ── */
   function collectNodeText(node) {
-    const parts = [];
-    // 收集当前元素的文本
-    const elText = node.element.innerText || node.element.textContent || '';
-    parts.push(stripMarkdown(elText.trim()));
+    const parts = []
 
-    // 递归收集子节点
-    if (node.children) {
-      node.children.forEach(child => {
-        parts.push(collectNodeText(child));
-      });
+    if (node.type === 'heading') {
+      // 标题节点：收集标题文字 + 标题下面的章节内容
+      const headingText = node.element.textContent.trim()
+      parts.push(stripMarkdown(headingText))
+
+      // 找到同级或更高级的下一个标题作为边界
+      const sectionContent = collectSectionContent(node.element, node.level)
+      if (sectionContent) parts.push(stripMarkdown(sectionContent))
+    } else {
+      // 问答/未知节点：element 是整个消息容器，直接取 innerText
+      const elText = node.element.innerText || node.element.textContent || ''
+      if (elText.trim()) parts.push(stripMarkdown(elText.trim()))
     }
-    return parts.filter(p => p.length > 0).join('\n');
+
+    // 递归收集子节点（answer 里的子标题等）
+    if (node.children && node.children.length > 0) {
+      node.children.forEach(child => {
+        const childText = collectNodeText(child)
+        if (childText) parts.push(childText)
+      })
+    }
+
+    return parts.filter(p => p.length > 0).join('\n\n')
+  }
+
+  /* ── 收集标题下面的章节正文（到下一个同级标题为止） ── */
+  function collectSectionContent(headingEl, level) {
+    const texts = []
+    let el = headingEl.nextElementSibling
+    while (el) {
+      // 遇到同级或更高级的标题就停
+      if (/^H[1-6]$/.test(el.tagName)) {
+        const nextLevel = parseInt(el.tagName[1])
+        if (nextLevel <= level) break
+      }
+      const text = el.innerText || el.textContent || ''
+      if (text.trim()) texts.push(text.trim())
+      el = el.nextElementSibling
+    }
+    return texts.join('\n')
   }
 
   /* ── 过滤 Markdown 标记 ── */
