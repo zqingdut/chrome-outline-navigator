@@ -22,6 +22,8 @@
     /(^|\.)chatgpt\.com$/i,
     /(^|\.)chat\.openai\.com$/i,
     /(^|\.)claude\.ai$/i,
+    /(^|\.)gemini\.google\.com$/i,
+    /(^|\.)bard\.google\.com$/i,
     /(^|\.)chat\.deepseek\.com$/i,
     /(^|\.)kimi\.moonshot\.cn$/i,
     /(^|\.)tongyi\.aliyun\.com$/i,
@@ -92,23 +94,31 @@
   }
 
   /* ── 引擎2: 对话检测 ── */
-  const Q_PAT = /user|human|question|提问|问题|right|msg-user|from-user|is-user|sender-user/i;
-  const A_PAT = /assistant|ai|bot|answer|回答|回复|left|msg-ai|msg-bot|from-ai|is-ai|sender-ai/i;
+  const Q_PAT = /user|human|question|prompt|query|request|提问|问题|right|msg-user|from-user|is-user|sender-user|user-query|user-prompt/i;
+  const A_PAT = /assistant|model|gemini|bard|ai|bot|answer|response|result|回答|回复|left|msg-ai|msg-bot|from-ai|is-ai|sender-ai|model-response/i;
+
+  function getRoleSignal(el) {
+    const parts = [];
+    for (const attr of el.attributes) {
+      parts.push(attr.name, attr.value || '');
+    }
+    parts.push((el.className || '').toString(), el.id || '');
+    parts.push(el.getAttribute('role') || '', el.getAttribute('aria-label') || '');
+    parts.push(el.getAttribute('data-role') || '', el.getAttribute('data-author') || '');
+    parts.push(el.getAttribute('data-message-author-role') || '', el.getAttribute('data-testid') || '');
+    return parts.join(' ').toLowerCase();
+  }
 
   function guessRole(el) {
-    for (const attr of el.attributes) {
-      if (Q_PAT.test(attr.value)) return 'user';
-      if (A_PAT.test(attr.value)) return 'assistant';
-    }
-    const cls = (el.className || '').toString();
-    const id = el.id || '';
-    if (Q_PAT.test(cls) || Q_PAT.test(id)) return 'user';
-    if (A_PAT.test(cls) || A_PAT.test(id)) return 'assistant';
-    const inner = el.querySelector('[class*="user"], [class*="human"], [class*="assistant"], [class*="bot"], [data-role], [data-author]');
+    const signal = getRoleSignal(el);
+    if (Q_PAT.test(signal)) return 'user';
+    if (A_PAT.test(signal)) return 'assistant';
+
+    const inner = el.querySelector('[class*="user"], [class*="human"], [class*="assistant"], [class*="bot"], [class*="model"], [class*="prompt"], [data-role], [data-author], [data-message-author-role], [aria-label]');
     if (inner) {
-      const ic = (inner.className || '').toString() + (inner.getAttribute('data-role') || '');
-      if (Q_PAT.test(ic)) return 'user';
-      if (A_PAT.test(ic)) return 'assistant';
+      const innerSignal = getRoleSignal(inner);
+      if (Q_PAT.test(innerSignal)) return 'user';
+      if (A_PAT.test(innerSignal)) return 'assistant';
     }
     const text = el.textContent.trim();
     if (/\?$|？$/.test(text) && text.length < 200) return 'user';
@@ -116,9 +126,31 @@
     return 'unknown';
   }
 
+  function getChatCandidates() {
+    const preferredRoots = [
+      'main',
+      '[role="main"]',
+      '[class*="chat"]',
+      '[class*="conversation"]',
+      '[class*="thread"]',
+      '[data-testid*="conversation"]',
+      '[data-testid*="chat"]',
+      '[data-test-id*="conversation"]',
+      '[data-message-author-role]',
+    ];
+
+    const preferred = [];
+    preferredRoots.forEach(selector => {
+      document.querySelectorAll(selector).forEach(el => preferred.push(el));
+    });
+
+    const fallback = Array.from(document.querySelectorAll('div, section, main'));
+    return [...new Set([...preferred, ...fallback])];
+  }
+
   function detectChatDialog() {
     const candidates = [];
-    document.querySelectorAll('div, section, main').forEach(el => {
+    getChatCandidates().forEach(el => {
       const kids = Array.from(el.children).filter(k => {
         const r = k.getBoundingClientRect();
         return r.height >= 20 && !['SCRIPT','STYLE','SVG','CANVAS','BR','HR'].includes(k.tagName);
@@ -165,7 +197,9 @@
   }
 
   function extractText(el) {
-    const p = el.querySelector('p, .text, .content, [class*="text"], [class*="content"]');
+    const p = el.querySelector(
+      'p, .text, .content, [class*="text"], [class*="content"], [class*="message"], [class*="query"], [class*="prompt"], [class*="response"], [data-testid*="message"], [data-testid*="query"], [data-testid*="response"]'
+    );
     const text = (p || el).textContent.trim().replace(/\s+/g, ' ');
     return text.length < CONFIG.minTextLen ? null : trunc(text);
   }
