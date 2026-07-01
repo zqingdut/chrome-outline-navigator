@@ -18,6 +18,18 @@
     truncLen: 55,
   };
 
+  const AI_HOST_PATTERNS = [
+    /(^|\.)chatgpt\.com$/i,
+    /(^|\.)chat\.openai\.com$/i,
+    /(^|\.)claude\.ai$/i,
+    /(^|\.)chat\.deepseek\.com$/i,
+    /(^|\.)kimi\.moonshot\.cn$/i,
+    /(^|\.)tongyi\.aliyun\.com$/i,
+    /(^|\.)yiyan\.baidu\.com$/i,
+    /(^|\.)doubao\.com$/i,
+    /(^|\.)perplexity\.ai$/i,
+  ];
+
   const collapseState = new Map();
   let lastContentHash = '';
 
@@ -27,6 +39,11 @@
   }
 
   function uid() { return '__ol_' + Math.random().toString(36).slice(2, 8); }
+
+  function isAIChatHost() {
+    const host = window.location.hostname || '';
+    return AI_HOST_PATTERNS.some(re => re.test(host));
+  }
 
   function isVisible(el) {
     if (!el) return false;
@@ -136,7 +153,7 @@
           const ht = h.textContent.trim();
           if (ht.length < CONFIG.minTextLen) return;
           if (!h.id) h.id = uid();
-          ans.children.push({ id: h.id, text: ht, level: parseInt(h.tagName[1]) + 1 || 3, element: h, type: 'heading', children: [] });
+          ans.children.push({ id: h.id, text: trunc(ht), level: parseInt(h.tagName[1]) + 2 || 4, element: h, type: 'heading', children: [] });
         });
         if (curQ) curQ.children.push(ans);
         else items.push(ans);
@@ -193,8 +210,16 @@
   /* ── 主流程 ── */
   function collectAll() {
     const h = detectHeadings(), c = detectChatDialog(), q = detectQAPatterns(), v = detectVisualHeadings();
+
+    if (c.length >= 2) {
+      return c;
+    }
+
+    if (isAIChatHost() && q.length >= 2) {
+      return q;
+    }
+
     if (h.length >= 3) return dedup(h);
-    if (c.length >= 2) return dedup(merge(c, h));
     if (q.length >= 2) return dedup(merge(q, h));
     return dedup(merge(h, v));
   }
