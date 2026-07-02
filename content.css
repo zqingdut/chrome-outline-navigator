@@ -22,7 +22,16 @@
   flex-direction: column;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
     'Microsoft YaHei', sans-serif;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+  transition:
+    width 0.26s cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 0.26s cubic-bezier(0.2, 0.8, 0.2, 1),
+    max-height 0.26s cubic-bezier(0.2, 0.8, 0.2, 1),
+    right 0.26s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-radius 0.26s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  will-change: width, height, max-height, right, border-radius;
   overflow: hidden;
 }
 
@@ -43,13 +52,16 @@
 #__outline_sidebar.__outline_collapsed .__outline_search,
 #__outline_sidebar.__outline_collapsed .__outline_list,
 #__outline_sidebar.__outline_collapsed .__outline_empty {
-  display: none;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
+  transform: translateX(8px);
+  transition-delay: 0s, 0s, 0.14s;
 }
 
 #__outline_sidebar.__outline_collapsed .__outline_handle {
   opacity: 1;
+  pointer-events: auto;
 }
 
 /* ── 拖拽手柄（收起时显示） ──────────────────── */
@@ -60,6 +72,7 @@
   width: 38px;
   min-height: 38px;
   opacity: 0;
+  pointer-events: none;
   color: rgba(135, 175, 255, 0.9);
   cursor: pointer;
   transition: opacity 0.2s, color 0.2s, background 0.2s;
@@ -86,7 +99,8 @@
   padding: 14px 16px 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   flex-shrink: 0;
-  transition: opacity 0.2s;
+  transform: translateX(0);
+  transition: opacity 0.16s ease 0.08s, transform 0.18s ease 0.08s, visibility 0s linear 0s;
 }
 
 .__outline_title {
@@ -153,7 +167,13 @@
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 8px;
-  transition: all 0.2s, opacity 0.2s;
+  transform: translateX(0);
+  transition:
+    opacity 0.16s ease 0.1s,
+    transform 0.18s ease 0.1s,
+    visibility 0s linear 0s,
+    border-color 0.2s,
+    background 0.2s;
   flex-shrink: 0;
 }
 
@@ -186,7 +206,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 4px 0;
-  transition: opacity 0.2s;
+  transform: translateX(0);
+  transition: opacity 0.16s ease 0.12s, transform 0.18s ease 0.12s, visibility 0s linear 0s;
 }
 .__outline_list::-webkit-scrollbar { width: 4px; }
 .__outline_list::-webkit-scrollbar-track { background: transparent; }
@@ -204,7 +225,8 @@
   padding: 24px 16px;
   color: rgba(255, 255, 255, 0.3);
   font-size: 12px;
-  transition: opacity 0.2s;
+  transform: translateX(0);
+  transition: opacity 0.16s ease 0.12s, transform 0.18s ease 0.12s, visibility 0s linear 0s;
 }
 
 /* ── 标题闪烁高亮效果 ──────────────────────── */
@@ -222,22 +244,6 @@
 .__outline_flash {
   animation: __outline_flash 1.2s ease-out;
   border-radius: 4px;
-}
-
-/* ── 入场动画 ──────────────────────────────── */
-@keyframes __outline_slide_in {
-  from {
-    transform: translateY(-50%) translateX(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(-50%) translateX(0);
-    opacity: 1;
-  }
-}
-
-#__outline_sidebar:not(.__outline_collapsed) {
-  animation: __outline_slide_in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── AI 聊天模式样式 ──────────────────────── */
@@ -348,7 +354,11 @@
 
 @media (max-width: 768px) {
   #__outline_sidebar { width: 240px; max-height: 60vh; }
-  #__outline_sidebar.__outline_collapsed { width: 32px; }
+  #__outline_sidebar.__outline_collapsed {
+    width: 36px;
+    height: 36px;
+    max-height: 36px;
+  }
   .__outline_search_btn { opacity: 1; width: 28px; height: 28px; }
   .__outline_expand { width: 22px; height: 22px; }
 }

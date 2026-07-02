@@ -369,14 +369,14 @@
   /* ══════════════════════════════════════════════════
      侧边栏渲染
      ══════════════════════════════════════════════════ */
-  function createSidebar(items) {
+  function createSidebar(items, options = {}) {
+    const { collapsed = true } = options;
     const old = document.getElementById('__outline_sidebar');
-    if (old) old.remove();
     const tree = buildTree(items);
 
     const sidebar = document.createElement('div');
     sidebar.id = '__outline_sidebar';
-    sidebar.className = '__outline_sidebar __outline_collapsed';
+    sidebar.className = `__outline_sidebar${collapsed ? ' __outline_collapsed' : ''}`;
     sidebar.innerHTML = `
       <div class="__outline_handle">
         <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
@@ -421,8 +421,9 @@
 
     const list = sidebar.querySelector('.__outline_list');
     tree.forEach(node => renderTreeNode(list, node, 0));
-    document.body.appendChild(sidebar);
     bindEvents(sidebar, items);
+    if (old) old.replaceWith(sidebar);
+    else document.body.appendChild(sidebar);
     // 延迟一帧确保 DOM 已渲染
     requestAnimationFrame(() => restoreCollapseState());
     return sidebar;
@@ -758,12 +759,7 @@
     const existing = document.getElementById('__outline_sidebar');
     const wasCollapsed = existing ? existing.classList.contains('__outline_collapsed') : true;
 
-    createSidebar(items);
-
-    if (!wasCollapsed) {
-      const sb = document.getElementById('__outline_sidebar');
-      if (sb) sb.classList.remove('__outline_collapsed');
-    }
+    createSidebar(items, { collapsed: wasCollapsed });
     console.log(`[Outline Navigator] 检测到 ${items.length} 个导航项`);
   }
 
