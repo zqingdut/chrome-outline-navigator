@@ -28,15 +28,22 @@
 
 /* ── 收起状态 ────────────────────────────────── */
 #__outline_sidebar.__outline_collapsed {
-  width: 40px;
-  max-height: 200px;
-  border-radius: 12px 0 0 12px;
+  width: 38px;
+  height: 38px;
+  max-height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(100, 140, 255, 0.18);
+  right: 10px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 #__outline_sidebar.__outline_collapsed .__outline_header,
 #__outline_sidebar.__outline_collapsed .__outline_search,
 #__outline_sidebar.__outline_collapsed .__outline_list,
 #__outline_sidebar.__outline_collapsed .__outline_empty {
+  display: none;
   opacity: 0;
   pointer-events: none;
 }
@@ -50,18 +57,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  min-height: 40px;
+  width: 38px;
+  min-height: 38px;
   opacity: 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(135, 175, 255, 0.9);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, color 0.2s, background 0.2s;
   flex-shrink: 0;
+  border-radius: 999px;
 }
 
 .__outline_handle:hover {
-  color: rgba(120, 160, 255, 0.9);
-  background: rgba(255, 255, 255, 0.04);
+  color: rgba(180, 205, 255, 0.98);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.__outline_handle svg {
+  width: 24px;
+  height: 24px;
+  transform: none;
 }
 
 /* ── 标题区 ────────────────────────────────── */
@@ -123,6 +137,10 @@
 
 .__outline_toggle svg {
   transition: transform 0.3s;
+}
+
+#__outline_sidebar:not(.__outline_collapsed) .__outline_toggle svg {
+  transform: rotate(180deg);
 }
 
 /* ── 搜索框 ────────────────────────────────── */
@@ -247,7 +265,20 @@
   }
   
   #__outline_sidebar.__outline_collapsed {
-    width: 32px;
+    width: 36px;
+    height: 36px;
+    max-height: 36px;
+    right: 8px;
+  }
+
+  .__outline_handle {
+    width: 36px;
+    min-height: 36px;
+  }
+
+  .__outline_handle svg {
+    width: 22px;
+    height: 22px;
   }
 }
 

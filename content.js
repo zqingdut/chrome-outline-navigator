@@ -34,6 +34,7 @@
 
   const collapseState = new Map();
   let lastContentHash = '';
+  let lastInitAt = 0;
 
   function trunc(s, n = CONFIG.truncLen) {
     s = s.replace(/\s+/g, ' ').trim();
@@ -149,6 +150,9 @@
   }
 
   function detectChatDialog() {
+    const geminiItems = detectGeminiDialog();
+    if (geminiItems.length >= 2) return geminiItems;
+
     const candidates = [];
     getChatCandidates().forEach(el => {
       const kids = Array.from(el.children).filter(k => {
@@ -166,6 +170,56 @@
     return buildPairedItems(best.children);
   }
 
+  function detectGeminiDialog() {
+    const turns = Array.from(document.querySelectorAll('.conversation-container'));
+    if (turns.length === 0) return [];
+
+    const items = [];
+    turns.forEach(turn => {
+      if (!isVisible(turn)) return;
+
+      const queryEl = turn.querySelector('.user-query-container, user-query-content, [id^="user-query-content-"]');
+      const responseEl = turn.querySelector('.response-container, .presented-response-container, .response-content, [id^="model-response-message-content"]');
+
+      let questionNode = null;
+
+      if (queryEl) {
+        if (!queryEl.id) queryEl.id = uid();
+        const queryText = extractGeminiQueryText(queryEl) || extractText(queryEl);
+        if (queryText) {
+          questionNode = {
+            id: queryEl.id,
+            text: `💬 ${queryText}`,
+            level: 1,
+            element: queryEl,
+            type: 'question',
+            children: [],
+          };
+          items.push(questionNode);
+        }
+      }
+
+      if (responseEl) {
+        if (!responseEl.id) responseEl.id = uid();
+        const responseText = extractGeminiResponseText(responseEl) || extractText(responseEl);
+        if (responseText) {
+          const answerNode = {
+            id: responseEl.id,
+            text: `🤖 ${responseText}`,
+            level: 2,
+            element: responseEl,
+            type: 'answer',
+            children: collectResponseHeadings(responseEl, 2),
+          };
+          if (questionNode) questionNode.children.push(answerNode);
+          else items.push(answerNode);
+        }
+      }
+    });
+
+    return items;
+  }
+
   function buildPairedItems(children) {
     const items = [];
     let curQ = null;
@@ -180,13 +234,7 @@
         curQ = { id: el.id, text: `💬 ${text}`, level: 1, element: el, type: 'question', children: [] };
         items.push(curQ);
       } else if (role === 'assistant') {
-        const ans = { id: el.id, text: `🤖 ${text}`, level: 2, element: el, type: 'answer', children: [] };
-        el.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(h => {
-          const ht = h.textContent.trim();
-          if (ht.length < CONFIG.minTextLen) return;
-          if (!h.id) h.id = uid();
-          ans.children.push({ id: h.id, text: trunc(ht), level: parseInt(h.tagName[1]) + 2 || 4, element: h, type: 'heading', children: [] });
-        });
+        const ans = { id: el.id, text: `🤖 ${text}`, level: 2, element: el, type: 'answer', children: collectResponseHeadings(el, 2) };
         if (curQ) curQ.children.push(ans);
         else items.push(ans);
       } else {
@@ -202,6 +250,42 @@
     );
     const text = (p || el).textContent.trim().replace(/\s+/g, ' ');
     return text.length < CONFIG.minTextLen ? null : trunc(text);
+  }
+
+  function extractGeminiQueryText(el) {
+    const target = el.querySelector('.query-text-line, .query-text, [data-test-id="luminous-collapsed-bubble"] p') || el;
+    const text = (target.innerText || target.textContent || '')
+      .replace(/^你说\s*/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return text.length < CONFIG.minTextLen ? null : trunc(text);
+  }
+
+  function extractGeminiResponseText(el) {
+    const target = el.querySelector('.markdown, .response-content, .model-response-text, [id^="model-response-message-content"]') || el;
+    const text = (target.innerText || target.textContent || '')
+      .replace(/^Gemini\s*说\s*/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return text.length < CONFIG.minTextLen ? null : trunc(text);
+  }
+
+  function collectResponseHeadings(el, baseLevel) {
+    const items = [];
+    el.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(h => {
+      const ht = h.textContent.trim();
+      if (ht.length < CONFIG.minTextLen) return;
+      if (!h.id) h.id = uid();
+      items.push({
+        id: h.id,
+        text: trunc(ht),
+        level: parseInt(h.tagName[1]) + baseLevel || baseLevel + 2,
+        element: h,
+        type: 'heading',
+        children: [],
+      });
+    });
+    return items;
   }
 
   /* ── 引擎3: Q:/A: 模式 ── */
@@ -295,7 +379,17 @@
     sidebar.className = '__outline_sidebar __outline_collapsed';
     sidebar.innerHTML = `
       <div class="__outline_handle">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="16" r="15" fill="#172033"/>
+          <path d="M8.5 15.5c.2-5.7 3.4-9.1 7.6-9.1 4.5 0 7.3 3.1 7.5 8.9l-2.5-3.1-3.4 1.5-3.2-2.2-3.1 2.2-2.9 1.8Z" fill="#d6dbe7"/>
+          <path d="M9.4 15.2c0-4.5 2.7-7.6 6.7-7.6s6.6 3.1 6.6 7.6v2.6c0 4.5-2.7 7.5-6.6 7.5s-6.7-3-6.7-7.5v-2.6Z" fill="#f1c7a6"/>
+          <path d="M8.7 15.4c.5-5.2 3.5-8.4 7.4-8.4 4.2 0 7.1 3.2 7.3 8.7-2.2-.5-4.1-1.5-5.8-3-2.1 1.8-5 2.8-8.9 2.7Z" fill="#4e5668"/>
+          <path d="M11.8 17.2h3.1m2.3 0h3.1" stroke="#172033" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M14.9 17.2h2.3" stroke="#172033" stroke-width="1" stroke-linecap="round"/>
+          <path d="M12.4 20.8c1.1 1 2.3 1.5 3.7 1.5 1.5 0 2.7-.5 3.7-1.5" stroke="#7a3f2a" stroke-width="1.2" stroke-linecap="round"/>
+          <path d="M13.1 20.1c1.8-.7 4.2-.7 6 0" stroke="#6d3826" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M8.6 25.5c1.8-2 4.3-3.1 7.5-3.1 3.1 0 5.6 1.1 7.3 3.1" fill="#4f8cff"/>
+        </svg>
       </div>
       <div class="__outline_header">
         <div class="__outline_title">
@@ -311,7 +405,7 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
           </button>
           <button class="__outline_toggle" title="收起侧边栏">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
           </button>
         </div>
       </div>
@@ -586,15 +680,33 @@
     const toggle = sidebar.querySelector('.__outline_toggle');
     const search = sidebar.querySelector('.__outline_search_input');
     const list = sidebar.querySelector('.__outline_list');
+    const setToggleState = collapsed => {
+      toggle.title = collapsed ? '展开侧边栏' : '收起侧边栏';
+      toggle.setAttribute('aria-label', collapsed ? '展开侧边栏' : '收起侧边栏');
+    };
+    const expandSidebar = () => {
+      sidebar.classList.remove('__outline_collapsed');
+      setToggleState(false);
+    };
+
+    setToggleState(sidebar.classList.contains('__outline_collapsed'));
+
+    sidebar.addEventListener('click', e => {
+      if (!sidebar.classList.contains('__outline_collapsed')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      expandSidebar();
+    });
 
     toggle.addEventListener('click', e => {
       e.stopPropagation();
-      const c = sidebar.classList.toggle('__outline_collapsed');
-      toggle.title = c ? '展开' : '收起';
-      toggle.querySelector('svg').style.transform = c ? 'rotate(0deg)' : 'rotate(180deg)';
+      const collapsed = sidebar.classList.toggle('__outline_collapsed');
+      setToggleState(collapsed);
     });
 
-    sidebar.querySelector('.__outline_handle').addEventListener('click', () => sidebar.classList.remove('__outline_collapsed'));
+    sidebar.querySelector('.__outline_handle').addEventListener('click', () => {
+      expandSidebar();
+    });
 
     sidebar.querySelectorAll('.__outline_scroll_btn').forEach(btn => {
       btn.addEventListener('click', e => {
@@ -636,6 +748,7 @@
 
   /* ── 初始化 + 智能刷新 ── */
   function init() {
+    lastInitAt = Date.now();
     const items = collectAll();
     const hash = contentHash();
     // 内容没变就不重建侧边栏（但折叠状态已通过 collapseState 保持）
@@ -661,8 +774,11 @@
   let refreshTimer = null;
   function debouncedRefresh() {
     if (refreshTimer) clearTimeout(refreshTimer);
-    // 用较短的防抖，让对话切换能及时响应
-    refreshTimer = setTimeout(init, 800);
+    const elapsed = Date.now() - lastInitAt;
+    const delay = elapsed < CONFIG.minRefreshInterval
+      ? Math.max(CONFIG.refreshDebounce, CONFIG.minRefreshInterval - elapsed)
+      : CONFIG.refreshDebounce;
+    refreshTimer = setTimeout(init, delay);
   }
 
   const observer = new MutationObserver(mutations => {
